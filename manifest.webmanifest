@@ -1,11 +1,11 @@
 {
-  "name": "Gem Quest",
+  "name": "Gem Quest Adventure",
   "short_name": "Gem Quest",
-  "description": "A treasure trail board game for 1 to 6 players. Answer questions at your own level to collect coins and gems.",
+  "description": "A 6-level adventure for 1 to 6 players taking turns: collect coins and gems, answer questions at your own level, and face the Big Octopus.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "fullscreen",
-  "orientation": "any",
+  "orientation": "landscape",
   "background_color": "#16213e",
   "theme_color": "#16213e",
   "icons": [

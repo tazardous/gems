@@ -1,44 +1,63 @@
-# Gem Quest
+# Gem Quest Adventure
 
-A treasure-trail board game for 1 to 6 players, passed around one phone or
-tablet. Roll the die, hop along the trail, answer a question at **your own
-level**, and collect coins 🪙 and gems 💎. When someone reaches the castle 🏰,
-everyone else gets one last turn. Then the player with the most treasure wins.
+A side-scrolling adventure for 1 to 6 players who take turns on one phone or
+tablet. Each player picks a hero and their own age level. Everyone plays
+Level 1, then everyone plays Level 2, and so on. Standings show after each
+level and a podium at the end. A gem is worth 5 coins, and the most treasure
+wins.
 
-One self-contained `index.html` with no build step and no internet needed. It
-uses the device's own fonts, emoji and voice.
+One self-contained `index.html` with no build step and no internet needed.
+All the heroes, creatures, levels and music are original.
 
-## Levels (picked separately for each player)
+## The six levels (each one harder)
 
-| Level | For | What the questions are like |
+| # | Place | Collect | What makes it harder |
+|---|---|---|---|
+| 1 | Sunny Meadow | 🪙 coins | small gaps, low ledges |
+| 2 | Whispering Woods | 🪙 coins | more and wider gaps, higher ledges |
+| 3 | Canyon Hop | 🪙 coins | 3-wide gaps everywhere, tall stair-step ledges |
+| 4 | Crystal Cave | 💎 gems | moving rafts across wide pools |
+| 5 | Frosty Peaks | 💎 gems | slippery ice, faster rafts over 6-wide gaps |
+| 6 | Octopus Cove | 💎 gems | small sea creatures (crabs, jellyfish, pufferfish), then the **Big Octopus** |
+
+**The Big Octopus** has one blind eye, crossed out with an X. He bobs his
+head up and down, sweeps a long tentacle along the sand, and lobs ink blobs.
+Jump on his head when it comes down (the ledge next to him helps), and jump
+over the tentacle. Beat him and he gives up, drops 5 gems, and lets you
+through to the treasure chest.
+
+**Small creatures:** jump on them and they float away. Bumping into them
+from the side hurts.
+
+**Wise Owl gates:** in every level, the Wise Owl's stone gates ask a question
+at that player's own age level, in Math, Words, Science, World or Fun Facts.
+A right answer wins 5 🪙 (or 1 💎 in gem levels). Either way, the gate opens
+and you keep going.
+
+## Age levels (picked per player)
+
+| | 🐣 Little (4–6) | 🚀 Kid (8–12) | 🎓 Adult |
+|---|---|---|---|
+| Questions | read aloud, pictures, 3 big choices | times tables, spelling, science, capitals, history | algebra, vocabulary, chemistry, world capitals, literature |
+| Hearts | none, so nothing to lose | 3 | 3 |
+| Jumping | double jump, and hold JUMP to float down | double jump | single jump |
+| Gaps | stepping stones in the plain gaps | | |
+| Creatures and the Octopus | slower; Octopus needs 2 bounces | 3 bounces | faster; 4 bounces |
+
+Falling in a gap brings you back to the last flag in a bubble. Out of hearts
+means back to the flag, and you drop 3 coins (or 1 gem).
+
+## Controls
+
+| Action | Keyboard | Touch |
 |---|---|---|
-| 🐣 Little | ages 4–6 | counting pictures, adding small numbers, first letters, rhymes, opposites, colors, shapes, animals, nursery rhymes. Read aloud with 3 big answer buttons. |
-| 🚀 Kid | ages 8–12 | times tables, division, 3-digit math, fractions, place value, word problems, spelling, synonyms, homophones, planets, the body, capitals, U.S. history, art and music |
-| 🎓 Adult | grown-ups | percentages, algebra, primes, number patterns, vocabulary, hard spellings, idioms, chemistry and biology, world and state capitals, history, literature, painters, composers |
+| Walk | ← → (or A D) | ◀ ▶ |
+| Jump (press again in the air to double jump) | Space, Z or ↑ | JUMP |
+| Pause (keep playing, start the level over, or save and quit) | P or Esc | II |
+| Sound on/off | M | ♪ |
 
-Every player plays at their own level for the same rewards, so a 5-year-old
-and Grandpa can play fairly at the same table.
-
-## Spaces
-
-| Space | What happens |
-|---|---|
-| ➕ 🔤 🔬 🌍 ⭐ Math, Words, Science, World, Fun Facts | Answer a question in that subject. Right = 3 🪙 |
-| 💎 Gem | A gem question in any subject. Right = 1 💎 |
-| 🍀 Lucky clover | Free 2 🪙 |
-| 🎁 Treasure chest | A surprise: a gem or 3 to 5 coins |
-| 🌀 Whoosh | Zoom ahead 3 spaces |
-| 🏰 Castle | First to arrive gets 2 💎 + 5 🪙, and everyone else gets one last turn. Anyone else who makes it gets 1 💎 |
-
-A gem is worth 5 coins. A wrong answer just shows the right one. Little players
-still get 1 🪙 for trying. Questions don't repeat within a game.
-
-**Game length:** Short (28 spaces), Medium (40) or Long (52).
-
-**Read aloud:** Little-level questions and their answers are read out
-automatically. The 🔊 button on any question reads it again, and the 🔊 button
-on the side turns the voice off. 🎵 turns sounds off. 🏠 saves the game, and
-**Keep Playing** on the title screen picks it back up, even after closing the app.
+**Save and quit** from the pause menu (or just close the app between turns),
+then tap **Keep Playing** on the title screen to continue with the next turn.
 
 ## Put it on an Android phone (works offline)
 
@@ -46,28 +65,38 @@ on the side turns the voice off. 🎵 turns sounds off. 🏠 saves the game, and
 2. On the phone, open `https://tazardous.github.io/gems/` in Chrome while online.
 3. Let it load once. Then use ⋮ → **Install app** (or **Add to Home screen**).
 
-After that it opens like an app and runs with no internet.
+If you installed the earlier board-game version, just open the app online
+once and it updates itself.
 
 ## Updating
 
-Edit the files, change `CACHE` in `sw.js` (for example `gq-v2`), then push. The
-next time the phone opens the game online, it picks up the new version.
+Edit the files, change `CACHE` in `sw.js` (for example `gq-v3`), then push.
 
-## Adding questions
+## Making changes
 
-Question banks are near the top of the script in `index.html`. `L_*` arrays
-are Little, `K_*` are Kid and `A_*` are Adult. A bank entry is
-`[question, right answer, wrong, wrong, wrong]`. Little entries have 2 wrong
-answers and an optional picture: `{pic:'🐄'}`. Math questions are generated
-fresh each time, so they never run out.
+- **Levels:** in `LEVELS`, near the top of the script. The fields are pits
+  (`[x, width]`, or `[x, width, 'm']` for a pit with a moving raft),
+  platforms (`[x0, x1, row]`), Owl gates, mushroom springs, flags, creatures
+  (`[x, 'crab' | 'jelly' | 'puffer', lowest age level]`), and the boss arena.
+  Coins and gems are placed automatically.
+- **Age-level settings:** in `AGES`.
+- **Questions:** the `L_*` (Little), `K_*` (Kid) and `A_*` (Adult) banks.
+  A bank entry is `[question, right answer, wrong, wrong, wrong]`. Math
+  questions are generated fresh each time.
 
 ## Testing
 
-`tests/run.py` uses headless Chromium. It generates 22,500 questions and checks
-each one, including recomputing every generated math answer. Then it plays full
-games with 1 to 6 players at mixed levels on every board length, checks that a
-saved game resumes after a reload, and checks the layout on phone and tablet
-sizes in both orientations. `tests/shots.py <folder>` saves screenshots.
+`tests/run.py` uses headless Chromium. It:
+
+- checks 22,500 generated questions
+- proves every coin and gem in every level can be reached with Adult jumping
+- has a bot play all 6 levels at all 3 age levels (rafts and the Octopus fight included)
+- tests the Octopus's attacks and defeat
+- runs full 6-level adventures with 1, 3 and 6 players
+- resumes a saved game
+- checks screen sizes
+
+`tests/shots.py <folder>` saves screenshots.
 
 ```
 pip install playwright
