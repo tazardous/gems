@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#16213e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<title>Gem Quest</title>
+<style>
+:root{
+  --bg1:#1d2b53; --bg2:#0f1733; --card:#fff8e7; --ink:#2b2140; --muted:#6b5f80;
+  --gold:#f7c948; --gold2:#e0a400; --gem:#22d3ee; --ok:#22c55e; --bad:#ef4444;
+  --r:18px; --shadow:0 6px 0 rgba(0,0,0,.25), 0 14px 30px rgba(0,0,0,.35);
+  --font:"Trebuchet MS","Nunito","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:var(--font);color:var(--ink);background:radial-gradient(120% 90% at 50% 0%,var(--bg1),var(--bg2));overflow:hidden;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;cursor:pointer;border:0;touch-action:manipulation}
+.screen{position:fixed;inset:0;display:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.screen.active{display:flex}
+.big{font-size:clamp(18px,3.4vmin,26px);font-weight:800;padding:.7em 1.4em;border-radius:999px;box-shadow:var(--shadow);transition:transform .08s}
+.big:active{transform:translateY(3px)}
+.gold{background:linear-gradient(#ffe27a,var(--gold));color:#5a3b00}
+.mint{background:linear-gradient(#8ff0b4,#3ccf7c);color:#08381c}
+.plain{background:#fff;color:var(--ink)}
+.iconbtn{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.15);color:#fff;font-size:20px;display:grid;place-items:center}
+.iconbtn.off{opacity:.45}
+/* ---------- title ---------- */
+#title{flex-direction:column;align-items:center;justify-content:center;gap:2.2vmin;text-align:center;color:#fff}
+#title h1{margin:0;font-size:clamp(40px,11vmin,96px);letter-spacing:.02em;color:var(--gold);text-shadow:0 5px 0 #8a5a00,0 10px 24px rgba(0,0,0,.5)}
+#title .sub{font-size:clamp(15px,3.2vmin,24px);opacity:.9;max-width:34em;padding:0 16px}
+#title .row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.floaty{font-size:clamp(34px,8vmin,64px);animation:bob 2.4s ease-in-out infinite;display:inline-block}
+.floaty:nth-child(2){animation-delay:.4s}.floaty:nth-child(3){animation-delay:.8s}.floaty:nth-child(4){animation-delay:1.2s}.floaty:nth-child(5){animation-delay:1.6s}
+@keyframes bob{50%{transform:translateY(-10px) rotate(6deg)}}
+/* ---------- setup ---------- */
+#setup{flex-direction:column;align-items:center;overflow:auto;color:#fff}
+#setup h2{margin:14px 0 4px;color:var(--gold);font-size:clamp(22px,5vmin,36px)}
+#setup .hint{opacity:.8;font-size:14px;margin-bottom:8px;text-align:center;padding:0 12px}
+#plist{display:flex;flex-direction:column;gap:10px;width:min(760px,96vw)}
+.prow{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;background:var(--card);color:var(--ink);border-radius:var(--r);padding:10px;box-shadow:var(--shadow);border-left:10px solid var(--pc)}
+.prow .av{width:58px;height:58px;border-radius:50%;font-size:34px;display:grid;place-items:center;background:var(--pc);box-shadow:inset 0 -4px 0 rgba(0,0,0,.2)}
+.prow input{font:inherit;font-size:20px;font-weight:700;padding:10px 12px;border-radius:12px;border:2px solid #e6dcc4;background:#fff;width:100%;min-width:0;color:var(--ink)}
+.prow .del{width:40px;height:40px;border-radius:50%;background:#f1e6cc;color:#7a5a2a;font-size:20px}
+.levels{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.levels button{padding:9px 4px;border-radius:12px;background:#efe5cc;color:#5a4a2a;font-weight:800;font-size:clamp(13px,2.6vmin,16px);line-height:1.15}
+.levels button small{display:block;font-weight:600;opacity:.8;font-size:.8em}
+.levels button.on{background:var(--pc);color:#fff;box-shadow:inset 0 -3px 0 rgba(0,0,0,.25)}
+.setupbar{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;align-items:center;margin:14px 0 22px}
+.seg{display:flex;background:rgba(255,255,255,.12);border-radius:999px;padding:4px}
+.seg button{background:none;color:#fff;font-weight:800;padding:9px 14px;border-radius:999px;font-size:15px}
+.seg button.on{background:var(--gold);color:#5a3b00}
+/* ---------- game ---------- */
+#game{display:none;grid-template-columns:1fr minmax(240px,30%);gap:0}
+#game.active{display:grid}
+#boardWrap{position:relative;min-width:0;min-height:0;padding:8px}
+#board{width:100%;height:100%;display:block}
+#panel{display:flex;flex-direction:column;gap:10px;padding:10px;min-height:0;overflow:auto;background:rgba(0,0,0,.18)}
+#turnCard{background:var(--card);border-radius:var(--r);padding:12px;box-shadow:var(--shadow);text-align:center;border-top:10px solid var(--pc,#ccc)}
+#turnName{font-size:clamp(18px,3.4vmin,26px);font-weight:900;margin:2px 0}
+#turnLevel{font-size:13px;color:var(--muted);font-weight:700}
+#diceRow{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:8px}
+.die{width:64px;height:64px;border-radius:14px;background:#fff;box-shadow:inset 0 -5px 0 #ddd,0 4px 10px rgba(0,0,0,.25);display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:8px;gap:2px}
+.die i{width:12px;height:12px;border-radius:50%;background:var(--ink);place-self:center;visibility:hidden}
+.die.roll{animation:shake .5s}
+@keyframes shake{20%{transform:rotate(-20deg)}40%{transform:rotate(18deg)}60%{transform:rotate(-12deg)}80%{transform:rotate(8deg)}}
+#rollBtn:disabled{filter:grayscale(1);opacity:.5}
+#scores{display:flex;flex-direction:column;gap:8px}
+.sc{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;background:rgba(255,255,255,.92);border-radius:14px;padding:6px 10px;border-left:8px solid var(--pc);transition:transform .2s}
+.sc.now{transform:scale(1.03);box-shadow:0 0 0 3px var(--gold)}
+.sc .av{font-size:26px}
+.sc .nm{font-weight:900;font-size:16px;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc .lv{font-size:11px;color:var(--muted);font-weight:700}
+.sc .tr{font-weight:900;font-size:15px;text-align:right;white-space:nowrap}
+.sc .tot{font-size:12px;color:var(--muted);font-weight:800}
+#topbar{display:flex;gap:8px;justify-content:flex-end}
+/* ---------- modal ---------- */
+#modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(10,12,30,.6);padding:12px;z-index:20}
+#modal.show{display:flex}
+#qcard{background:var(--card);border-radius:24px;box-shadow:var(--shadow);width:min(760px,100%);max-height:100%;overflow:auto;padding:0 0 16px;animation:pop .25s}
+@keyframes pop{from{transform:scale(.85);opacity:0}}
+#qhead{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:24px 24px 0 0;color:#fff;font-weight:900;font-size:clamp(15px,3vmin,20px)}
+#qhead .who{margin-left:auto;font-size:.85em;opacity:.95}
+#qhead .say{background:rgba(255,255,255,.25);color:#fff;border-radius:10px;width:42px;height:38px;font-size:20px}
+#qtext{font-size:clamp(20px,4.4vmin,34px);font-weight:900;text-align:center;padding:14px 16px 6px;line-height:1.25}
+#qpic{text-align:center;font-size:clamp(40px,10vmin,80px);line-height:1.1;padding:0 12px 6px;word-break:break-all}
+#qpic.small{font-size:clamp(28px,6vmin,46px);letter-spacing:.06em}
+#qpic svg{width:clamp(80px,20vmin,150px);height:clamp(80px,20vmin,150px)}
+#choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:8px 16px}
+#choices button{background:#fff;border:4px solid #e9dcbc;border-radius:16px;padding:14px 10px;font-size:clamp(17px,3.6vmin,26px);font-weight:800;color:var(--ink);min-height:62px;box-shadow:0 4px 0 #e0d0aa}
+#choices button:active{transform:translateY(2px)}
+#choices button.right{background:#d8ffe2;border-color:var(--ok)}
+#choices button.wrong{background:#ffe1e1;border-color:var(--bad);animation:no .35s}
+#choices button.dim{opacity:.45}
+#choices.little button{font-size:clamp(22px,5vmin,36px)}
+@keyframes no{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+#qmsg{text-align:center;font-size:clamp(18px,3.8vmin,28px);font-weight:900;min-height:1.3em;padding:6px 12px}
+#qmsg .sub{display:block;font-size:.7em;color:var(--muted);font-weight:700}
+#qnext{display:none;margin:4px auto 0}
+#qnext.show{display:block}
+/* ---------- end ---------- */
+#end{flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;gap:12px;overflow:auto}
+#end h2{font-size:clamp(30px,8vmin,64px);margin:6px 0;color:var(--gold);text-shadow:0 4px 0 #8a5a00}
+#podium{display:flex;align-items:flex-end;gap:12px;justify-content:center;flex-wrap:wrap}
+.pod{background:var(--card);color:var(--ink);border-radius:18px;padding:10px 14px;min-width:120px;box-shadow:var(--shadow);border-top:10px solid var(--pc)}
+.pod .av{font-size:42px}.pod .nm{font-weight:900;font-size:18px}.pod .pts{font-weight:900;font-size:22px}
+.pod.first{transform:translateY(-14px) scale(1.08)}
+.pod .place{font-size:28px}
+.fly{position:fixed;z-index:50;font-size:34px;pointer-events:none;transition:transform .8s cubic-bezier(.5,-0.4,.6,1),opacity .8s}
+.confetti{position:fixed;width:9px;height:14px;z-index:40;pointer-events:none;top:-20px;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+@media (orientation:portrait){
+  #game.active{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+  #board{height:auto}
+  #panel{position:relative}
+  #topbar{position:absolute;top:10px;right:10px;flex-direction:column;z-index:2}
+  #turnCard{margin-right:54px}
+  #scores{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .sc{grid-template-columns:auto minmax(0,1fr);row-gap:0}
+  .sc .tr{grid-column:1/-1;text-align:left;font-size:14px}
+  .sc .tr .tot{display:inline;margin-left:6px}
+}
+@media (max-height:520px){
+  #qhead{padding:6px 12px} #qtext{padding:8px 12px 2px;font-size:clamp(17px,4.6vmin,24px)} #qpic{font-size:34px;padding-bottom:2px} #qpic.small{font-size:24px} #qpic svg{width:64px;height:64px}
+  #choices{gap:8px;padding:4px 12px} #choices button{min-height:44px;padding:8px;font-size:18px} #choices.little button{font-size:22px}
+  #qmsg{padding:2px 12px;font-size:17px} #qcard{padding-bottom:8px} #qnext{padding:.45em 1.2em}
+}
+@media (max-width:520px){ #choices{grid-template-columns:1fr} #choices.little{grid-template-columns:1fr 1fr 1fr} }
+</style>
+</head>
+<body>
+
+<section id="title" class="screen active">
+  <div><span class="floaty">💎</span><span class="floaty">🪙</span><span class="floaty">🏰</span><span class="floaty">🪙</span><span class="floaty">💎</span></div>
+  <h1>Gem Quest</h1>
+  <div class="sub">Race along the treasure trail, answer questions, and collect the most coins and gems! For 1 to 6 players. Everyone picks their own level.</div>
+  <div class="row">
+    <button class="big gold" id="newBtn">▶ New Game</button>
+    <button class="big mint" id="contBtn" hidden>⏯ Keep Playing</button>
+  </div>
+</section>
+
+<section id="setup" class="screen">
+  <h2>Who is playing?</h2>
+  <div class="hint">Tap the animal to change it. Pick a level for each player.</div>
+  <div id="plist"></div>
+  <div class="setupbar">
+    <button class="big plain" id="addBtn">＋ Add player</button>
+    <div class="seg" id="lenSeg"><button data-len="0">Short</button><button data-len="1">Medium</button><button data-len="2">Long</button></div>
+  </div>
+  <div class="setupbar" style="margin-top:0">
+    <button class="big plain" id="backBtn">◀ Back</button>
+    <button class="big gold" id="startBtn">Start! ▶</button>
+  </div>
+</section>
+
+<section id="game" class="screen">
+  <div id="boardWrap"><svg id="board" viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid meet" aria-label="Game board"></svg></div>
+  <div id="panel">
+    <div id="topbar"><button class="iconbtn" id="voiceBtn" title="Read aloud">🔊</button><button class="iconbtn" id="soundBtn" title="Sound">🎵</button><button class="iconbtn" id="menuBtn" title="Menu">🏠</button></div>
+    <div id="turnCard">
+      <div id="turnName"></div><div id="turnLevel"></div>
+      <div id="diceRow"><div class="die" id="die"></div><button class="big gold" id="rollBtn">Roll!</button></div>
+      <div id="turnMsg" style="min-height:1.2em;font-weight:800;margin-top:6px;color:var(--muted)"></div>
+    </div>
+    <div id="scores"></div>
+  </div>
+</section>
+
+<section id="end" class="screen">
+  <div><span class="floaty">🏆</span></div>
+  <h2 id="endTitle">Treasure Time!</h2>
+  <div id="podium"></div>
+  <div class="row" style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:10px">
+    <button class="big gold" id="againBtn">Play Again</button>
+    <button class="big plain" id="homeBtn">Change Players</button>
+  </div>
+</section>
+
+<div id="modal"><div id="qcard">
+  <div id="qhead"><span id="qcat"></span><span class="who" id="qwho"></span><button class="say" id="qsay" aria-label="Read it again">🔊</button></div>
+  <div id="qtext"></div><div id="qpic"></div>
+  <div id="choices"></div>
+  <div id="qmsg"></div>
+  <button class="big gold" id="qnext">Next ▶</button>
+</div></div>
+
+<script>
+(function(){
+"use strict";
+/* =====================================================================
+   Gem Quest: a pass-and-play treasure board game for 1-6 players.
+   Each player picks a level: Little (ages 4-6), Kid (ages 8-12) or Adult.
+   Land on a space, answer a question at your own level, collect coins
+   and gems. A gem is worth 5 coins. Most treasure at the end wins.
+   ===================================================================== */
+const $=s=>document.querySelector(s);
+const rint=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+const fmt=n=>n.toLocaleString('en-US');
+const FAST=()=>!!window.__GQfast;
+const wait=ms=>FAST()?Promise.resolve():new Promise(r=>setTimeout(r,ms));
+
+/* ---------------- levels and categories ---------------- */
+const LEVELS=[
+  {key:'little',name:'Little',ages:'Ages 4–6',icon:'🐣',nch:3},
+  {key:'kid',name:'Kid',ages:'Ages 8–12',icon:'🚀',nch:4},
+  {key:'adult',name:'Adult',ages:'Grown-ups',icon:'🎓',nch:4},
+];
+const CATS={
+  math:{name:'Math',icon:'➕',color:'#3b82f6'},
+  words:{name:'Words',icon:'🔤',color:'#16a34a'},
+  science:{name:'Science',icon:'🔬',color:'#9333ea'},
+  world:{name:'World',icon:'🌍',color:'#ea580c'},
+  fun:{name:'Fun Facts',icon:'⭐',color:'#db2777'},
+};
+const CAT_KEYS=Object.keys(CATS);
+
+/* ---------------- question helpers ---------------- */
+// A question: {q, pic, choices:[...], ans, say}
+function mk(q,correct,wrongs,extra){
+  const ch=shuffle([correct].concat(wrongs));
+  return Object.assign({q,choices:ch.map(String),ans:ch.indexOf(correct)},extra||{});
+}
+function numWrongs(ans,n,min=0,spread){
+  const s=spread||Math.max(2,Math.round(Math.abs(ans)*0.15));
+  // round answers get round wrong choices (120 minutes vs 100, 130, 180)
+  if(ans>=40&&ans%10===0){ const out=shuffle([ans+10,ans-10,ans+20,ans-20,ans+30,ans+60,ans-30]).filter(v=>v>=min&&v!==ans); return out.slice(0,n); }
+  // mostly near misses, with a farther one mixed in for bigger numbers
+  const near=shuffle([ans+1,ans-1,ans+2,ans-2]).slice(0,s<=1?4:rint(1,2)), mid=shuffle([ans+s,ans-s,ans+3,ans-3]), far=s<=1?[]:shuffle([ans+10,ans-10,ans*2,Math.round(ans/2)]);
+  const cands=near.concat(mid,far).filter(v=>v>=min&&v!==ans&&Number.isInteger(v));
+  const out=[]; for(const v of cands) if(!out.includes(v)&&out.length<n) out.push(v);
+  let k=1; while(out.length<n){ const v=ans+k*(k%2?1:-1)*3+k; if(v>=min&&v!==ans&&!out.includes(v)) out.push(v); k++; }
+  return out;
+}
+const NAMES=['Ava','Leo','Mia','Sam','Zoe','Max','Lily','Ben'];
+// bank entry: [question, correct, wrong1, wrong2, wrong3?, picture?]
+function fromBank(entry,nch){
+  const [q,a,...rest]=entry; let pic=null;
+  const wr=rest.filter(x=>{ if(x&&typeof x==='object'){ pic=x.pic; return false; } return true; });
+  return mk(q,a,shuffle(wr).slice(0,nch-1),pic?{pic}:{});
+}
+
+/* ---------------- LITTLE (ages 4-6) ---------------- */
+const L_THINGS=['🍎','⭐','🐞','🐟','🎈','🍓','🚗','🦆','🌸','🍪'];
+const L_WORDS=[['A','APPLE','🍎'],['B','BALL','⚽'],['C','CAT','🐱'],['D','DOG','🐶'],['E','EGG','🥚'],['F','FISH','🐟'],['G','GOAT','🐐'],['H','HAT','🎩'],['K','KITE','🪁'],['L','LION','🦁'],['M','MOON','🌙'],['N','NOSE','👃'],['O','OCTOPUS','🐙'],['P','PIG','🐷'],['Q','QUEEN','👸'],['R','RABBIT','🐰'],['S','SUN','☀️'],['T','TREE','🌳'],['U','UMBRELLA','☂️'],['V','VAN','🚐'],['W','WHALE','🐳'],['Z','ZEBRA','🦓'],['J','JUICE','🧃'],['I','ICE CREAM','🍦']];
+const L_RHYME=[['CAT','🐱','HAT',['DOG','SUN']],['BEE','🐝','TREE',['CAR','FISH']],['FROG','🐸','LOG',['BALL','CAKE']],['CAKE','🎂','SNAKE',['DOOR','PIG']],['MOON','🌙','SPOON',['BOAT','HAT']],['BEAR','🐻','CHAIR',['DOG','MILK']],['STAR','⭐','CAR',['FISH','BED']],['FISH','🐟','DISH',['TREE','SOCK']],['BOAT','⛵','GOAT',['CAT','BELL']],['KING','🤴','RING',['DUCK','HAT']],['BED','🛏️','RED',['SUN','CUP']],['DUCK','🦆','TRUCK',['MOON','BALL']],['MOUSE','🐭','HOUSE',['TREE','CAR']],['DOG','🐶','FROG',['CAKE','SHOE']]];
+const L_OPP=[['HOT','COLD',['BIG','FAST']],['BIG','SMALL',['HAPPY','WET']],['UP','DOWN',['HOT','RED']],['DAY','NIGHT',['CAT','TALL']],['HAPPY','SAD',['SLOW','UP']],['FAST','SLOW',['COLD','DOG']],['WET','DRY',['BIG','GO']],['OPEN','CLOSED',['SOFT','DAY']],['FULL','EMPTY',['HOT','LOUD']],['LOUD','QUIET',['UP','BIG']],['STOP','GO',['SAD','WET']],['TALL','SHORT',['HAPPY','DRY']]];
+const L_SCI=[
+ ['Which animal says MOO?','Cow','Dog','Duck',{pic:'🐄'}],['Which one can fly?','Bird','Fish','Cat',{pic:'🪽'}],['Which animal lives in the water?','Fish','Horse','Dog',{pic:'🌊'}],
+ ['What do plants need to grow?','Water and sun','Candy','Toys',{pic:'🌱'}],['What do bees make?','Honey','Milk','Bread',{pic:'🐝'}],['Which animal has a long trunk?','Elephant','Giraffe','Lion',{pic:'🐘'}],
+ ['Which animal has a very long neck?','Giraffe','Pig','Frog',{pic:'🦒'}],['What do caterpillars turn into?','Butterflies','Fish','Birds',{pic:'🐛'}],['What falls from clouds when it rains?','Water','Rocks','Leaves',{pic:'🌧️'}],
+ ['What do we use to see?','Eyes','Ears','Toes',{pic:'👀'}],['What do we use to hear?','Ears','Eyes','Knees',{pic:'👂'}],['What do we use to smell?','Nose','Elbow','Feet',{pic:'👃'}],
+ ['A puppy is a baby what?','Dog','Cat','Horse',{pic:'🐶'}],['A kitten is a baby what?','Cat','Dog','Duck',{pic:'🐱'}],['A chick hatches from an…','Egg','Apple','Box',{pic:'🐣'}],
+ ['Which season has snow?','Winter','Summer','Spring',{pic:'⛄'}],['When do we see the moon and stars?','At night','At lunch','At breakfast',{pic:'🌙'}],['Which animal hops?','Kangaroo','Snake','Fish',{pic:'🦘'}],
+ ['Which animal says QUACK?','Duck','Cow','Sheep',{pic:'🦆'}],['Which one is a fruit?','Banana','Rock','Shoe',{pic:'🍌'}],['Which one is a vegetable?','Carrot','Cookie','Candy',{pic:'🥕'}],
+ ['What does a frog say?','Ribbit','Moo','Woof',{pic:'🐸'}],['How many legs does a dog have?','4','2','6',{pic:'🐕'}],['How many legs does a bird have?','2','4','6',{pic:'🐦'}],
+ ['How many legs does a spider have?','8','4','2',{pic:'🕷️'}],['Which animal has stripes?','Zebra','Pig','Frog',{pic:'🦓'}],['What do we breathe?','Air','Sand','Juice',{pic:'💨'}],
+ ['Ice is very…','Cold','Hot','Sticky',{pic:'🧊'}],['Where does a bird live?','In a nest','In a cave','In a shoe',{pic:'🐦'}],['Which animal sleeps all winter?','Bear','Cow','Duck',{pic:'🐻'}],
+];
+const L_WORLD=[
+ ['What do you wear on your feet?','Shoes','Hat','Gloves',{pic:'👟'}],['What do you wear on your head?','Hat','Socks','Shoes',{pic:'🧢'}],['What do we use to brush our teeth?','Toothbrush','Spoon','Comb',{pic:'🪥'}],
+ ['What color is a banana?','Yellow','Blue','Purple',{pic:'🍌'}],['What color is grass?','Green','Pink','Orange',{pic:'🌿'}],['What color is a fire truck?','Red','Green','Purple',{pic:'🚒'}],
+ ['Which one is a vehicle?','Car','Apple','Shoe',{pic:'🛣️'}],['Who helps put out fires?','Firefighter','Baker','Farmer',{pic:'🔥'}],['Who helps sick people feel better?','Doctor','Pilot','Chef',{pic:'🏥'}],
+ ['Who flies an airplane?','Pilot','Doctor','Farmer',{pic:'✈️'}],['Where do we buy food?','Grocery store','Library','Bathtub',{pic:'🛒'}],['What day comes after Monday?','Tuesday','Friday','Sunday',{pic:'📅'}],
+ ['How many days are in a week?','7','3','10',{pic:'📅'}],['Which is the biggest?','Elephant','Mouse','Ant',{pic:'🤔'}],['Which is the smallest?','Ant','Horse','Bear',{pic:'🔍'}],
+ ['When do you use an umbrella?','When it rains','When you sleep','When you eat',{pic:'☂️'}],['What shape is a ball?','Circle','Square','Triangle',{pic:'⚽'}],['What shape is a slice of pizza?','Triangle','Circle','Square',{pic:'🍕'}],
+ ['What do you do at a red light?','Stop','Go','Dance',{pic:'🚦'}],['What does a green light mean?','Go','Stop','Sleep',{pic:'🟢'}],['Where do you sleep?','Bed','Bathtub','Oven',{pic:'😴'}],
+ ['Who brings the mail?','Mail carrier','Doctor','Chef',{pic:'📬'}],['Where do books live?','Library','Pool','Garage',{pic:'📚'}],['What do you use to cut paper?','Scissors','Spoon','Pillow',{pic:'📄'}],
+];
+const L_FUN=[
+ ['Twinkle, twinkle, little…','Star','Car','Bear',{pic:'✨'}],['Jack and Jill went up the…','Hill','Tree','Stairs',{pic:'⛰️'}],['Humpty Dumpty sat on a…','Wall','Chair','Cloud',{pic:'🥚'}],
+ ['Old MacDonald had a…','Farm','Car','Boat',{pic:'🚜'}],['How many wheels on a bicycle?','2','4','3',{pic:'🚲'}],['How many wheels on a car?','4','2','8',{pic:'🚗'}],
+ ['What do you say when someone gives you a gift?','Thank you','Goodbye','Ouch',{pic:'🎁'}],['Which one makes music?','Drum','Pillow','Sock',{pic:'🎵'}],['What sound does a clock make?','Tick tock','Moo','Quack',{pic:'⏰'}],
+ ['What do you do with a book?','Read it','Eat it','Wear it',{pic:'📖'}],['If you get a hug, you feel…','Happy','Sad','Grumpy',{pic:'🤗'}],['What do we put on a birthday cake?','Candles','Shoes','Rocks',{pic:'🎂'}],
+ ['What do you build with snow?','Snowman','Sandcastle','Pancake',{pic:'❄️'}],['What do you build at the beach?','Sandcastle','Snowman','Igloo',{pic:'🏖️'}],['How many fingers on one hand?','5','3','10',{pic:'✋'}],
+ ['What do you use to paint?','Brush','Fork','Shoe',{pic:'🎨'}],['Which one can you ride?','Bike','Banana','Pillow',{pic:'🛴'}],['What do you wear when it is cold?','Coat','Swimsuit','Sunglasses',{pic:'🥶'}],
+ ['Mary had a little…','Lamb','Pig','Truck',{pic:'🐑'}],['Row, row, row your…','Boat','Car','Bed',{pic:'🚣'}],['The wheels on the bus go…','Round and round','Up and down','Moo moo',{pic:'🚌'}],
+ ['What do you say when you meet someone?','Hello','Ouch','Yuck',{pic:'👋'}],['How many eyes do you have?','2','3','1',{pic:'👀'}],['What do you blow up for a party?','Balloons','Shoes','Rocks',{pic:'🎈'}],
+ ['Which one goes choo-choo?','Train','Boat','Bike',{pic:'🚂'}],['What do you use to call someone?','Phone','Spoon','Hat',{pic:'📞'}],['Where do fish swim at home?','Fish tank','Bathtub','Oven',{pic:'🐠'}],
+ ['What does a dog say?','Woof','Meow','Tweet',{pic:'🐕'}],['What do you sleep on?','Pillow','Plate','Ball',{pic:'🛏️'}],['Which one is a toy?','Teddy bear','Broom','Fork',{pic:'🧸'}],
+];
+const L_COLORS=[['RED','#ef4444'],['BLUE','#3b82f6'],['YELLOW','#facc15'],['GREEN','#22c55e'],['ORANGE','#f97316'],['PURPLE','#a855f7'],['PINK','#f472b6'],['BROWN','#92400e']];
+const L_SHAPES=['CIRCLE','SQUARE','TRIANGLE','STAR','HEART','RECTANGLE'];
+const cap=s=>s[0]+s.slice(1).toLowerCase();
+const LITTLE={
+  math(){
+    const k=rint(0,4), it=pick(L_THINGS);
+    if(k===0){ const n=rint(1,8); return mk('How many do you see?',n,numWrongs(n,2,1,1),{pic:{rows:it.repeat(n)},say:'Count them! How many do you see?'}); }
+    if(k===1){ const a=rint(1,5), b=rint(1,Math.min(5,10-a)); return mk('How many in all?',a+b,numWrongs(a+b,2,1,1),{pic:{rows:it.repeat(a)+' ➕ '+it.repeat(b)},say:`${a} plus ${b}. How many in all?`}); }
+    if(k===2){ const a=rint(3,8), b=rint(1,a-1); return mk(`You have ${a}. ${b} go away. How many are left?`,a-b,numWrongs(a-b,2,0,1),{pic:{rows:it.repeat(a)}}); }
+    if(k===3){ const s=rint(1,7); return mk(`What comes next? ${s}, ${s+1}, ${s+2}, …`,s+3,numWrongs(s+3,2,1,1),{pic:'🔢',say:`What number comes next? ${s}, ${s+1}, ${s+2}, what?`}); }
+    const nums=shuffle([1,2,3,4,5,6,7,8,9,10]).slice(0,3), big=Math.max(...nums);
+    return mk('Which number is the BIGGEST?',big,nums.filter(x=>x!==big),{pic:'🐘'});
+  },
+  words(){
+    const k=rint(0,2);
+    if(k===0){ const w=pick(L_WORDS), wr=shuffle(L_WORDS.filter(x=>x[0]!==w[0])).slice(0,2).map(x=>x[0]); return mk(`What letter does ${w[1]} start with?`,w[0],wr,{pic:w[2],say:`What letter does ${w[1].toLowerCase()} start with?`}); }
+    if(k===1){ const r=pick(L_RHYME); return mk(`Which word rhymes with ${r[0]}?`,r[2],r[3],{pic:r[1],say:`Which word rhymes with ${r[0].toLowerCase()}?`}); }
+    const o=pick(L_OPP); return mk(`What is the opposite of ${o[0]}?`,o[1],o[2],{pic:'🔄',say:`What is the opposite of ${o[0].toLowerCase()}?`});
+  },
+  science(){ return fromBank(pick(L_SCI),3); },
+  world(){
+    const k=rint(0,3);
+    if(k===0){ const c=shuffle(L_COLORS).slice(0,3); return mk('What color is this?',cap(c[0][0]),c.slice(1).map(x=>cap(x[0])),{pic:{color:c[0][1]}}); }
+    if(k===1){ const s=shuffle(L_SHAPES).slice(0,3); return mk('What shape is this?',cap(s[0]),s.slice(1).map(cap),{pic:{shape:s[0],color:pick(L_COLORS)[1]}}); }
+    return fromBank(pick(L_WORLD),3);
+  },
+  fun(){ return fromBank(pick(L_FUN),3); },
+};
+
+/* ---------------- KID (ages 8-12) ---------------- */
+const K_SPELL=[['because','becuase','becaus','beacuse'],['friend','freind','frend','freinde'],['beautiful','beutiful','beautifull','butiful'],['different','diffrent','differant','diferent'],['believe','beleive','belive','believ'],['Wednesday','Wensday','Wednsday','Wedensday'],['February','Febuary','Februery','Febrary'],['library','libary','liberry','librery'],['receive','recieve','receve','receeve'],['tomorrow','tommorow','tomorow','tommorrow'],['enough','enuff','enouf','enogh'],['people','peeple','peopel','poeple'],['again','agian','agen','aggain'],['school','skool','shcool','schol'],['answer','anser','answar','ansewr'],['island','iland','islund','ilsand']];
+const K_SYN=[['HAPPY','glad',['angry','tired','loud']],['BIG','large',['tiny','quick','soft']],['FAST','quick',['slow','heavy','quiet']],['SMALL','tiny',['huge','bright','tall']],['ANGRY','mad',['calm','happy','sleepy']],['SCARED','afraid',['brave','bored','proud']],['SMART','clever',['silly','lazy','rude']],['BEGIN','start',['finish','stop','end']],['SHOUT','yell',['whisper','smile','listen']],['JUMP','leap',['sit','crawl','sleep']],['QUIET','silent',['noisy','bright','busy']],['BRAVE','courageous',['fearful','careless','sleepy']],['TIRED','sleepy',['awake','excited','hungry']],['RICH','wealthy',['poor','famous','tall']]];
+const K_ANT=[['HOT','cold',['warm','sunny','spicy']],['ABOVE','below',['over','beside','near']],['ARRIVE','leave',['come','reach','enter']],['ANCIENT','modern',['old','historic','dusty']],['CAPTURE','release',['catch','trap','grab']],['EXPAND','shrink',['grow','stretch','swell']],['GENEROUS','selfish',['kind','giving','helpful']],['ACCEPT','refuse',['agree','take','allow']],['MAXIMUM','minimum',['most','largest','highest']],['ASLEEP','awake',['dreaming','resting','tired']],['INCREASE','decrease',['grow','raise','add']],['VICTORY','defeat',['win','triumph','success']]];
+const K_PLURAL=[['mouse','mice',['mouses','meese','mices']],['child','children',['childs','childes','childrens']],['goose','geese',['gooses','geeses','goosen']],['tooth','teeth',['tooths','teeths','toothes']],['foot','feet',['foots','feets','footes']],['leaf','leaves',['leafs','leafes','leavs']],['knife','knives',['knifes','knifs','knive']],['sheep','sheep',['sheeps','sheepes','shoop']],['wolf','wolves',['wolfs','wolfes','wolvs']],['woman','women',['womans','womens','womanes']]];
+const K_HOMO=[['___ going to the park later.',"They're",['Their','There','Thier']],['I can ___ the birds singing.','hear',['here','heer','hare']],['The wind ___ the leaves away.','blew',['blue','bloo','blewe']],['___ is my backpack?','Where',['Wear','Were','Ware']],['The dog wagged ___ tail.','its',["it's","its'",'it']],['I ___ the answer!','know',['no','now','knoe']],['We ___ the game!','won',['one','own','wun']],['My favorite ___ is a red rose.','flower',['flour','flowur','flowr']],['Put on your ___ for school.','clothes',['close','cloths','cloze']],['The ___ was too heavy to lift.','weight',['wait','wate','weigt']]];
+const K_POS=[['In "The dog ran quickly," which word is a VERB?','ran',['dog','quickly','the']],['In "The dog ran quickly," which word is an ADVERB?','quickly',['ran','dog','the']],['In "A tall girl sang," which word is an ADJECTIVE?','tall',['girl','sang','a']],['In "Mia ate a red apple," which word is a NOUN?','apple',['ate','red','a']],['In "He jumped over the fence," which word is a PRONOUN?','He',['jumped','over','fence']],['Which word is a NOUN?','mountain',['quickly','run','pretty']],['Which word is a VERB?','swim',['blue','table','happy']]];
+const K_SCI=[
+ ['Which is the largest planet in our solar system?','Jupiter','Saturn','Earth','Neptune'],['Which planet is closest to the Sun?','Mercury','Venus','Mars','Earth'],['Which planet is called the Red Planet?','Mars','Venus','Jupiter','Mercury'],
+ ['How many planets are in our solar system?','8','9','7','10'],['Which planet is famous for its big rings?','Saturn','Mars','Mercury','Venus'],['At what temperature (°C) does water boil?','100','90','50','150'],
+ ['At what temperature (°C) does water freeze?','0','10','32','-10'],['What gas do plants take in from the air?','Carbon dioxide','Oxygen','Helium','Hydrogen'],['What gas do we need to breathe in to live?','Oxygen','Carbon dioxide','Helium','Neon'],
+ ['How do plants make food from sunlight?','Photosynthesis','Evaporation','Digestion','Erosion'],['What is the hardest natural material?','Diamond','Gold','Iron','Glass'],['Ice is water in which state?','Solid','Liquid','Gas','Plasma'],
+ ['What is the largest organ of the human body?','Skin','Heart','Liver','Brain'],['Which organ pumps blood around your body?','Heart','Lungs','Stomach','Liver'],['How many bones are in an adult human body?','206','106','306','156'],
+ ['Which of these is a mammal?','Dolphin','Shark','Octopus','Salmon'],['How many legs does an insect have?','6','8','4','10'],['A spider is not an insect. It is an…','Arachnid','Amphibian','Reptile','Mammal'],
+ ['What is the fastest land animal?','Cheetah','Lion','Horse','Kangaroo'],['What is the largest animal that has ever lived?','Blue whale','T. rex','Elephant','Giant squid'],['What is a baby frog called?','Tadpole','Cub','Kid','Fawn'],
+ ['What force pulls things down to the ground?','Gravity','Magnetism','Friction','Wind'],['What does a thermometer measure?','Temperature','Weight','Speed','Time'],['What is the star at the center of our solar system?','The Sun','The North Star','The Moon','Sirius'],
+ ['About how many days does Earth take to go around the Sun?','365','30','100','1,000'],['Animals that eat only plants are called…','Herbivores','Carnivores','Omnivores','Predators'],['Rock that forms when lava cools is called…','Igneous','Sedimentary','Metamorphic','Fossil'],
+ ['Which of these does a magnet pick up?','Iron nail','Wooden stick','Plastic cup','Glass marble'],['Which travels faster?','Light','Sound','A jet plane','Wind'],['A caterpillar forms a ___ before it becomes a butterfly.','Chrysalis','Nest','Shell','Web'],
+ ['An animal with a backbone is called a…','Vertebrate','Invertebrate','Insect','Mollusk'],['When bees carry pollen from flower to flower, it is called…','Pollination','Migration','Hibernation','Evaporation'],
+];
+const K_WORLD=[
+ ['What is the largest ocean on Earth?','Pacific','Atlantic','Indian','Arctic'],['How many continents are there?','7','5','6','9'],['What is the largest continent?','Asia','Africa','Europe','North America'],
+ ['The Amazon River is on which continent?','South America','Africa','Asia','Europe'],['What is the capital of the United States?','Washington, D.C.','New York City','Chicago','Philadelphia'],['What is the capital of France?','Paris','London','Rome','Madrid'],
+ ['What is the capital of Japan?','Tokyo','Beijing','Seoul','Osaka'],['What is the capital of Italy?','Rome','Venice','Milan','Athens'],['What is the capital of the United Kingdom?','London','Paris','Dublin','Edinburgh'],
+ ['What is the capital of Canada?','Ottawa','Toronto','Vancouver','Montreal'],['What is the capital of Mexico?','Mexico City','Cancún','Madrid','Lima'],['What is the capital of Egypt?','Cairo','Nairobi','Athens','Baghdad'],
+ ['In which country do kangaroos live in the wild?','Australia','Brazil','India','Canada'],['The ancient pyramids of Giza are in which country?','Egypt','Mexico','Greece','Peru'],['The Statue of Liberty is in which city?','New York City','Boston','Washington, D.C.','Los Angeles'],
+ ['What is the coldest continent?','Antarctica','Europe','Asia','North America'],['The Sahara Desert is on which continent?','Africa','Asia','Australia','South America'],['How many states are in the United States?','50','48','52','51'],
+ ['What is the largest U.S. state by area?','Alaska','Texas','California','Montana'],['The equator splits Earth into the Northern and ___ Hemispheres.','Southern','Eastern','Western','Lower'],['Mount Everest is in which mountain range?','Himalayas','Andes','Rocky Mountains','Alps'],
+ ['Which country is shaped like a boot?','Italy','Spain','Chile','Norway'],['The Grand Canyon is in which U.S. state?','Arizona','Colorado','Utah','Nevada'],['The Great Wall is in which country?','China','Japan','India','Mongolia'],
+ ['The Eiffel Tower is in which city?','Paris','Rome','Berlin','London'],['In which direction does the sun rise?','East','West','North','South'],['Which tool shows you which way is north?','Compass','Ruler','Telescope','Thermometer'],
+ ['Hawaii is made up of…','Islands','Deserts','Glaciers','Canyons'],['What is the capital of Germany?','Berlin','Munich','Vienna','Hamburg'],['What is the capital of China?','Beijing','Shanghai','Tokyo','Hong Kong'],
+];
+const K_FUN=[
+ ['Who was the first president of the United States?','George Washington','Abraham Lincoln','Thomas Jefferson','John Adams'],['Which president gave the Gettysburg Address?','Abraham Lincoln','George Washington','Theodore Roosevelt','John F. Kennedy'],
+ ['Which inventor is famous for the light bulb?','Thomas Edison','Albert Einstein','Isaac Newton','Benjamin Franklin'],['Who made the first powered airplane flight in 1903?','The Wright brothers','Amelia Earhart','Charles Lindbergh','Henry Ford'],
+ ['Who was the first person to walk on the Moon?','Neil Armstrong','Buzz Aldrin','Yuri Gagarin','Sally Ride'],['In what year was the Declaration of Independence signed?','1776','1492','1812','1865'],
+ ['Who painted the Mona Lisa?','Leonardo da Vinci','Pablo Picasso','Vincent van Gogh','Michelangelo'],['How many keys are on a standard piano?','88','52','100','76'],['How many strings does a standard guitar have?','6','4','8','12'],
+ ['Which is NOT a primary color in painting?','Green','Red','Yellow','Blue'],['What color do you get by mixing blue and yellow?','Green','Purple','Orange','Brown'],["Who wrote \"Charlotte's Web\"?",'E. B. White','Dr. Seuss','Roald Dahl','Beverly Cleary'],
+ ['In which sport do you score a touchdown?','Football','Soccer','Baseball','Hockey'],['How many players does a soccer team have on the field?','11','9','10','12'],['How many rings are on the Olympic flag?','5','4','6','7'],
+ ['What is a baby kangaroo called?','Joey','Cub','Kit','Calf'],['What is a group of lions called?','Pride','Pack','Herd','Flock'],['What was the picture writing of ancient Egypt called?','Hieroglyphics','Cursive','Braille','Morse code'],
+ ['Which lived on Earth first?','Dinosaurs','People','Woolly mammoths','Dogs'],['What ship carried the Pilgrims to America in 1620?','Mayflower','Titanic','Santa María','Endeavour'],['The ancient Olympic Games began in which country?','Greece','Italy','Egypt','China'],
+ ['What does a cartographer make?','Maps','Cakes','Clocks','Furniture'],['Which famous composer kept writing music after he became deaf?','Beethoven','Mozart','Bach','Vivaldi'],['In what year did the Titanic sink?','1912','1812','1945','1899'],
+ ['How many days are in a leap year?','366','365','364','360'],['What is a shape with 8 sides called?','Octagon','Hexagon','Pentagon','Decagon'],
+];
+const KID={
+  math(){
+    const k=rint(0,9);
+    if(k===0){ const a=rint(2,12), b=rint(2,12); return mk(`${a} × ${b} = ?`,a*b,numWrongs(a*b,3,1,a)); }
+    if(k===1){ const b=rint(2,12), q=rint(2,12); return mk(`${b*q} ÷ ${b} = ?`,q,numWrongs(q,3,1,1)); }
+    if(k===2){ const a=rint(125,699), b=rint(108,299); return mk(`${a} + ${b} = ?`,a+b,numWrongs(a+b,3,0,10)); }
+    if(k===3){ const a=rint(400,999), b=rint(105,399); return mk(`${a} − ${b} = ?`,a-b,numWrongs(a-b,3,0,10)); }
+    if(k===4){ const d=pick([2,3,4,5]), n=d*rint(3,12); const nm={2:'half',3:'one third',4:'one quarter',5:'one fifth'}[d]; return mk(`What is ${nm} of ${n}?`,n/d,numWrongs(n/d,3,1,2)); }
+    if(k===5){ const n=rint(1000,9999), places=[['ones',1],['tens',10],['hundreds',100],['thousands',1000]], p=pick(places), dgt=Math.floor(n/p[1])%10;
+      const others=[...new Set(String(n).split('').map(Number))].filter(x=>x!==dgt); const wr=shuffle(others.concat([0,1,2,3,4,5,6,7,8,9].filter(x=>x!==dgt&&!others.includes(x)))).slice(0,3);
+      return mk(`What digit is in the ${p[0]} place of ${fmt(n)}?`,dgt,wr); }
+    if(k===6){ const n=rint(101,989); if(n%10===5) return KID.math(); const r=Math.round(n/10)*10; return mk(`Round ${n} to the nearest ten.`,r,[r+10,r-10,r+20,r-20].filter(v=>v>=0).slice(0,3),{pic:'🎯'}); }
+    if(k===7){ const w=rint(3,12), h=rint(2,9); return pick([()=>mk(`A rectangle is ${w} cm long and ${h} cm wide. What is its area?`,w*h,[2*(w+h),w+h,w*h+w].filter(v=>v!==w*h).slice(0,3).concat(numWrongs(w*h,3,1,2)).filter((v,i,a)=>a.indexOf(v)===i).slice(0,3),{pic:'📐'}),
+                                                         ()=>mk(`A rectangle is ${w} cm long and ${h} cm wide. What is its perimeter?`,2*(w+h),[w*h,w+h,2*w+h].filter(v=>v!==2*(w+h)).concat(numWrongs(2*(w+h),3,1,2)).filter((v,i,a)=>a.indexOf(v)===i).slice(0,3),{pic:'📏'})])(); }
+    if(k===8){ const nm=pick(NAMES); return pick([
+      ()=>{ const a=rint(12,60), b=rint(5,40); return mk(`${nm} has ${a} marbles and finds ${b} more. How many now?`,a+b,numWrongs(a+b,3,1,2),{pic:'🔵'}); },
+      ()=>{ const a=rint(30,90), b=rint(8,29); return mk(`${nm} had ${a} stickers and gave away ${b}. How many are left?`,a-b,numWrongs(a-b,3,1,2),{pic:'⭐'}); },
+      ()=>{ const n=rint(3,9), c=rint(4,12); return mk(`There are ${n} boxes with ${c} crayons in each. How many crayons in all?`,n*c,numWrongs(n*c,3,1,c),{pic:'🖍️'}); },
+      ()=>{ const k2=rint(2,8), q=rint(3,9); return mk(`${k2*q} cookies are shared equally by ${k2} friends. How many does each friend get?`,q,numWrongs(q,3,1,1),{pic:'🍪'}); },
+    ])(); }
+    return pick([()=>{ const h=rint(2,5); return mk(`How many minutes are in ${h} hours?`,h*60,numWrongs(h*60,3,1,30),{pic:'⏰'}); },
+                 ()=>{ const w=rint(2,6); return mk(`How many days are in ${w} weeks?`,w*7,numWrongs(w*7,3,1,7),{pic:'📅'}); },
+                 ()=>{ const n=rint(11,99); return mk(`Is ${n} even or odd?`,n%2?'Odd':'Even',[n%2?'Even':'Odd'].concat(['Both','Neither']),{}); }])();
+  },
+  words(){
+    const k=rint(0,5);
+    if(k===0){ const w=pick(K_SPELL); return mk('Which word is spelled correctly?',w[0],w.slice(1),{pic:'✏️'}); }
+    if(k===1){ const s=pick(K_SYN); return mk(`Which word means the SAME as ${s[0]}?`,s[1],s[2],{pic:'🟰'}); }
+    if(k===2){ const s=pick(K_ANT); return mk(`Which word means the OPPOSITE of ${s[0]}?`,s[1],s[2],{pic:'🔄'}); }
+    if(k===3){ const p=pick(K_PLURAL); return mk(`One ${p[0]}, two…`,p[1],p[2],{pic:'✌️'}); }
+    if(k===4){ const h=pick(K_HOMO); return mk(`Fill in the blank: "${h[0]}"`,h[1],h[2],{pic:'📝'}); }
+    const p=pick(K_POS); return mk(p[0],p[1],p[2],{pic:'📖'});
+  },
+  science(){ return fromBank(pick(K_SCI),4); },
+  world(){ return fromBank(pick(K_WORLD),4); },
+  fun(){ return fromBank(pick(K_FUN),4); },
+};
+
+/* ---------------- ADULT ---------------- */
+const A_VOCAB=[['Ubiquitous','Found everywhere'],['Ephemeral','Lasting a very short time'],['Benevolent','Kind and well-meaning'],['Gregarious','Fond of company; sociable'],['Laconic','Using very few words'],['Mundane','Dull and ordinary'],['Pragmatic','Practical and realistic'],['Candid','Truthful and straightforward'],['Meticulous','Showing great attention to detail'],['Obsolete','No longer in use; out of date'],['Verbose','Using more words than needed'],['Ambiguous','Open to more than one meaning'],['Tenacious','Holding firmly; persistent'],['Frugal','Careful and sparing with money'],['Lethargic','Sluggish and lacking energy'],['Eloquent','Fluent and persuasive in speaking'],['Cacophony','A harsh mix of sounds'],['Serendipity','A happy accidental discovery'],['Nostalgia','Wistful longing for the past'],['Plethora','A large or excessive amount'],['Quandary','A state of uncertainty; a dilemma'],['Altruistic','Selflessly concerned for others'],['Esoteric','Understood by only a few'],['Juxtapose','To place side by side for contrast'],['Ostentatious','Showy and designed to impress'],['Procrastinate','To put off doing something'],['Sycophant','A person who flatters to gain favor'],['Zealous','Full of passionate enthusiasm'],['Capricious','Prone to sudden changes of mood'],['Insidious','Harmful in a gradual, sneaky way']];
+const A_SPELL=[['accommodate','accomodate','acommodate','accommodait'],['millennium','millenium','milennium','millenniumm'],['conscientious','conscientous','consciencious','conscientiuos'],['rhythm','rythm','rhythym','rhythem'],['embarrass','embarass','embarras','embaress'],['occurrence','occurence','ocurrence','occurrance'],['separate','seperate','separete','seperete'],['definitely','definately','definitly','defenitely'],['liaison','liason','liasion','laison'],['questionnaire','questionaire','questionnair','qestionnaire'],['mischievous','mischievious','mischevous','mischievos'],['pharaoh','pharoah','pharaoe','pharoh'],['entrepreneur','entreprenuer','entrepeneur','entreprenur'],['necessary','neccessary','necesary','neccesary'],['privilege','priviledge','privelege','privilige'],['bureaucracy','bureacracy','beaurocracy','bureaucrasy']];
+const A_IDIOM=[['What does "break the ice" mean?','Ease the tension when meeting','Start a fight','Cancel plans','Go ice skating'],['What does "bite the bullet" mean?','Face something hard with courage','Eat too fast','Tell a lie','Give up quickly'],['What does "a blessing in disguise" mean?','Something good that first seemed bad','A secret gift','A rude remark','A costume party'],['What does "once in a blue moon" mean?','Very rarely','Every night','During winter','At midnight'],['What does "the ball is in your court" mean?','It is your decision now','You lost the game','You are in trouble','The game is over']];
+const A_SCI=[
+ ['What is the chemical symbol for gold?','Au','Ag','Gd','Go'],['What is the chemical symbol for silver?','Ag','Si','Au','Sv'],['What is the chemical symbol for iron?','Fe','Ir','In','I'],['What is the chemical symbol for sodium?','Na','So','Sd','S'],
+ ['What is the chemical symbol for lead?','Pb','Ld','Le','Pd'],['Which gas makes up most of Earth\'s atmosphere?','Nitrogen','Oxygen','Carbon dioxide','Argon'],['Which part of the cell is known as its "powerhouse"?','Mitochondria','Nucleus','Ribosome','Golgi apparatus'],
+ ['About how fast does light travel?','300,000 km per second','30,000 km per second','3,000 km per hour','300 km per second'],['What does DNA stand for?','Deoxyribonucleic acid','Dinitrogen acid','Deoxyribose nitrate','Dual nucleic acid'],['What is the pH of pure water?','7','0','5','14'],
+ ['Which particle has a negative charge?','Electron','Proton','Neutron','Photon'],['Which is the hottest planet in our solar system?','Venus','Mercury','Mars','Jupiter'],['What is the unit of electrical resistance?','Ohm','Volt','Watt','Ampere'],
+ ['What is the SI unit of force?','Newton','Joule','Pascal','Watt'],['What is the softest mineral on the Mohs scale?','Talc','Gypsum','Quartz','Calcite'],['What is the longest bone in the human body?','Femur','Tibia','Humerus','Spine'],
+ ['How many chromosomes are in a typical human body cell?','46','23','44','48'],['Which blood type is known as the universal donor for red cells?','O negative','AB positive','A positive','B negative'],['Who developed the theory of relativity?','Albert Einstein','Isaac Newton','Niels Bohr','Galileo Galilei'],
+ ['Who discovered penicillin?','Alexander Fleming','Louis Pasteur','Marie Curie','Joseph Lister'],['Who created the first widely used periodic table?','Dmitri Mendeleev','John Dalton','Antoine Lavoisier','Robert Boyle'],['About what temperature is absolute zero?','−273 °C','−100 °C','−459 °C','0 °C'],
+ ['Which element makes up most of the Sun?','Hydrogen','Helium','Oxygen','Carbon'],['A light-year is a unit of…','Distance','Time','Brightness','Speed'],['Which element has atomic number 1?','Hydrogen','Helium','Carbon','Lithium'],
+ ['Which organ produces insulin?','Pancreas','Liver','Kidney','Spleen'],['Sunlight on skin helps your body make which vitamin?','Vitamin D','Vitamin C','Vitamin A','Vitamin K'],['What is the study of fungi called?','Mycology','Botany','Entomology','Virology'],
+ ['At what temperature (°F) does water boil at sea level?','212','100','180','232'],['What is the chemical symbol for potassium?','K','P','Po','Pt'],
+];
+const A_WORLD=[
+ ['What is the capital of Australia?','Canberra','Sydney','Melbourne','Perth'],['What is the capital of Brazil?','Brasília','Rio de Janeiro','São Paulo','Salvador'],['What is the capital of Turkey?','Ankara','Istanbul','Izmir','Antalya'],
+ ['What is the capital of New Zealand?','Wellington','Auckland','Christchurch','Queenstown'],['What is the capital of Switzerland?','Bern','Zurich','Geneva','Basel'],['What is the capital of Kenya?','Nairobi','Mombasa','Addis Ababa','Kampala'],
+ ['What is the capital of Argentina?','Buenos Aires','Santiago','Montevideo','Córdoba'],['What is the capital of Norway?','Oslo','Stockholm','Copenhagen','Bergen'],['What is the capital of Peru?','Lima','Cusco','Quito','Bogotá'],
+ ['What is the capital of Vietnam?','Hanoi','Ho Chi Minh City','Da Nang','Phnom Penh'],['What is the capital of Morocco?','Rabat','Casablanca','Marrakesh','Tunis'],['What is the capital of Portugal?','Lisbon','Porto','Madrid','Seville'],
+ ['What is the longest continental mountain range?','Andes','Himalayas','Rocky Mountains','Alps'],['What is the smallest country in the world?','Vatican City','Monaco','San Marino','Liechtenstein'],['What is the deepest known point in the ocean?','Mariana Trench','Puerto Rico Trench','Java Trench','Tonga Trench'],
+ ['What is the largest lake in the world by area?','Caspian Sea','Lake Superior','Lake Victoria','Lake Baikal'],['Which strait separates Spain from Morocco?','Strait of Gibraltar','Strait of Hormuz','Bosphorus','Strait of Dover'],['What is the currency of Japan?','Yen','Yuan','Won','Ringgit'],
+ ['What is the currency of India?','Rupee','Rupiah','Taka','Dinar'],['Machu Picchu is in which country?','Peru','Bolivia','Mexico','Chile'],['Angkor Wat is in which country?','Cambodia','Thailand','Laos','Myanmar'],
+ ['What is the largest country by area?','Russia','Canada','China','United States'],['The Danube River empties into which sea?','Black Sea','Baltic Sea','Mediterranean Sea','North Sea'],['Angel Falls, the world\'s tallest waterfall, is in which country?','Venezuela','Brazil','Colombia','Guyana'],
+ ['What is the tallest mountain in North America?','Denali','Mount Whitney','Mount Rainier','Pikes Peak'],['What is the capital of Texas?','Austin','Houston','Dallas','San Antonio'],['What is the capital of California?','Sacramento','Los Angeles','San Francisco','San Diego'],
+ ['What is the capital of New York State?','Albany','New York City','Buffalo','Rochester'],['What is the capital of Florida?','Tallahassee','Miami','Orlando','Tampa'],['What is the capital of Illinois?','Springfield','Chicago','Peoria','Naperville'],
+];
+const A_FUN=[
+ ['In what year did World War II end?','1945','1918','1939','1950'],['In what year did World War I begin?','1914','1917','1905','1939'],['In what year did the Berlin Wall fall?','1989','1991','1961','1975'],
+ ['In what year was the Magna Carta sealed?','1215','1066','1492','1776'],['Who was the first emperor of Rome?','Augustus','Julius Caesar','Nero','Constantine'],['Who painted "The Starry Night"?','Vincent van Gogh','Claude Monet','Pablo Picasso','Paul Cézanne'],
+ ['Who painted the ceiling of the Sistine Chapel?','Michelangelo','Raphael','Leonardo da Vinci','Donatello'],['Who painted "The Persistence of Memory" (melting clocks)?','Salvador Dalí','René Magritte','Joan Miró','Frida Kahlo'],['Who painted "Girl with a Pearl Earring"?','Johannes Vermeer','Rembrandt','Jan van Eyck','Edgar Degas'],
+ ['Who wrote "Pride and Prejudice"?','Jane Austen','Charlotte Brontë','Mary Shelley','George Eliot'],['Who wrote "Moby-Dick"?','Herman Melville','Mark Twain','Nathaniel Hawthorne','Jack London'],['Who wrote "War and Peace"?','Leo Tolstoy','Fyodor Dostoevsky','Anton Chekhov','Ivan Turgenev'],
+ ['Who wrote "Don Quixote"?','Miguel de Cervantes','Gabriel García Márquez','Dante Alighieri','Victor Hugo'],['Who wrote "Nineteen Eighty-Four"?','George Orwell','Aldous Huxley','Ray Bradbury','H. G. Wells'],['Which ancient poet is credited with "The Odyssey"?','Homer','Virgil','Sophocles','Ovid'],
+ ['Who composed "The Four Seasons"?','Antonio Vivaldi','Johann Sebastian Bach','George Frideric Handel','Joseph Haydn'],['Who composed the "Moonlight Sonata"?','Ludwig van Beethoven','Frédéric Chopin','Franz Schubert','Wolfgang Amadeus Mozart'],['Who composed the opera "The Magic Flute"?','Wolfgang Amadeus Mozart','Giuseppe Verdi','Richard Wagner','Giacomo Puccini'],
+ ['Who was the first human in space?','Yuri Gagarin','Neil Armstrong','Alan Shepard','John Glenn'],['In what year was the U.S. Constitution signed?','1787','1776','1791','1803'],['Which president made the Louisiana Purchase?','Thomas Jefferson','James Madison','John Adams','Andrew Jackson'],
+ ['Which of the Seven Wonders of the Ancient World still stands?','Great Pyramid of Giza','Colossus of Rhodes','Hanging Gardens of Babylon','Lighthouse of Alexandria'],['Which language has the most native speakers?','Mandarin Chinese','English','Spanish','Hindi'],['Who received the first U.S. patent for the telephone?','Alexander Graham Bell','Thomas Edison','Nikola Tesla','Samuel Morse'],
+ ['In what year did humans first land on the Moon?','1969','1965','1972','1959'],['Christopher Columbus first reached the Americas in which year?','1492','1507','1620','1415'],
+];
+const A_CONV=[['How many feet are in a mile?','5,280','3,280','1,760','5,000'],['How many inches are in a yard?','36','12','24','48'],['How many ounces are in a pound?','16','12','8','10'],['The three angles of a triangle add up to how many degrees?','180','90','360','270'],['How many seconds are in an hour?','3,600','600','6,000','360'],['What is 3/8 as a percent?','37.5%','38%','35%','33.3%'],['What is 0.125 as a fraction?','1/8','1/4','1/12','1/6'],['How many sides does a dodecagon have?','12','10','11','20'],['What is 7² − 5²?','24','4','2','12'],['How many milliliters are in a liter?','1,000','100','10','10,000'],['What number is XL in Roman numerals?','40','60','90','15'],['What number is MCM in Roman numerals?','1900','1100','2100','1400']];
+const PRIMES=[23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97], COMPOS=[21,27,33,39,49,51,57,63,69,77,81,87,91,93];
+const ADULT={
+  math(){
+    const k=rint(0,7);
+    if(k===0){ let p,n; do{ p=pick([5,10,15,20,25,30,40,60,75]); n=rint(2,40)*10; }while(p*n%100); return mk(`What is ${p}% of ${n}?`,p*n/100,numWrongs(p*n/100,3,1,5),{pic:'💯'}); }
+    if(k===1){ const a=rint(13,98), b=rint(3,9); return mk(`${a} × ${b} = ?`,a*b,numWrongs(a*b,3,1,b*2)); }
+    if(k===2){ const n=rint(11,25); return pick([()=>mk(`What is the square root of ${n*n}?`,n,numWrongs(n,3,1,1)),()=>mk(`What is ${n}²?`,n*n,numWrongs(n*n,3,1,n))])(); }
+    if(k===3){ const x=rint(2,12), a=rint(2,9), b=rint(1,20); return mk(`Solve for x: ${a}x + ${b} = ${a*x+b}`,x,numWrongs(x,3,0,1),{pic:'🧮'}); }
+    if(k===4){ if(Math.random()<0.5){ const s=rint(2,5), r=rint(2,3), seq=[s,s*r,s*r*r,s*r*r*r]; return mk(`What comes next? ${seq.join(', ')}, …`,s*r**4,numWrongs(s*r**4,3,1,s*r)); }
+      const s=rint(3,20), d=rint(4,13), seq=[s,s+d,s+2*d,s+3*d]; return mk(`What comes next? ${seq.join(', ')}, …`,s+4*d,numWrongs(s+4*d,3,1,2)); }
+    if(k===5){ return mk('Which number is prime?',pick(PRIMES),shuffle(COMPOS).slice(0,3),{pic:'🔢'}); }
+    if(k===6){ const a=rint(15,95), b=rint(15,95); return pick([()=>mk(`${a} + ${b} + ${a+b} = ?`,2*(a+b),numWrongs(2*(a+b),3,1,10)),()=>{ const big=rint(5,9)*100+rint(1,99), sm=rint(101,big-50); return mk(`${big} − ${sm} = ?`,big-sm,numWrongs(big-sm,3,0,10)); }])(); }
+    return fromBank(pick(A_CONV),4);
+  },
+  words(){
+    const k=rint(0,3);
+    if(k===0){ const v=pick(A_VOCAB), wr=shuffle(A_VOCAB.filter(x=>x!==v)).slice(0,3).map(x=>x[1]); return mk(`What does "${v[0]}" mean?`,v[1],wr,{pic:'📚'}); }
+    if(k===1){ const v=pick(A_VOCAB), wr=shuffle(A_VOCAB.filter(x=>x!==v)).slice(0,3).map(x=>x[0]); return mk(`Which word means "${v[1].toLowerCase()}"?`,v[0],wr,{pic:'📚'}); }
+    if(k===2){ const w=pick(A_SPELL); return mk('Which word is spelled correctly?',w[0],w.slice(1),{pic:'✏️'}); }
+    return fromBank(pick(A_IDIOM),4);
+  },
+  science(){ return fromBank(pick(A_SCI),4); },
+  world(){ return fromBank(pick(A_WORLD),4); },
+  fun(){ return fromBank(pick(A_FUN),4); },
+};
+const GEN={little:LITTLE,kid:KID,adult:ADULT};
+function question(level,cat){
+  // avoid repeats within a game
+  const used=G&&G.used?(G.used[level+cat]=G.used[level+cat]||[]):[];
+  let q;
+  for(let tries=0;tries<25;tries++){ q=GEN[level][cat](); if(!used.includes(q.q+'|'+q.choices[q.ans])) break; }
+  used.push(q.q+'|'+q.choices[q.ans]); if(used.length>60) used.shift();
+  q.cat=cat; return q;
+}
+
+/* ---------------- sound and voice ---------------- */
+let AC=null;
+function audio(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended') AC.resume(); }
+function tone(f1,f2,dur,type='triangle',vol=0.08,delay=0){
+  if(!AC||!S.sound) return; const t0=AC.currentTime+delay, o=AC.createOscillator(), v=AC.createGain();
+  o.type=type; o.frequency.setValueAtTime(f1,t0); if(f2) o.frequency.exponentialRampToValueAtTime(f2,t0+dur);
+  v.gain.setValueAtTime(vol,t0); v.gain.exponentialRampToValueAtTime(0.0001,t0+dur); o.connect(v).connect(AC.destination); o.start(t0); o.stop(t0+dur+0.02);
+}
+const arp=(fs,step,type,vol,len)=>fs.forEach((f,i)=>tone(f,0,len||0.12,type||'triangle',vol||0.08,i*step));
+const SFX={
+  roll:()=>{ for(let i=0;i<6;i++) tone(rint(300,700),0,0.04,'square',0.04,i*0.06); },
+  hop:()=>tone(520,780,0.07,'triangle',0.06),
+  coin:()=>{ tone(988,0,0.08,'square',0.05); tone(1319,0,0.18,'square',0.05,0.08); },
+  gem:()=>arp([1047,1319,1568,2093],0.06,'triangle',0.08,0.15),
+  right:()=>arp([523,659,784,1047],0.08,'triangle',0.09),
+  wrong:()=>{ tone(330,220,0.25,'triangle',0.08); },
+  whoosh:()=>tone(200,1400,0.35,'sine',0.08),
+  fanfare:()=>arp([523,659,784,1047,784,1047,1319],0.13,'square',0.06,0.16),
+  click:()=>tone(880,0,0.04,'triangle',0.05),
+};
+const sfx=n=>{ try{ SFX[n]&&SFX[n](); }catch(e){} };
+function say(text){ if(!S.voice||FAST()) return; try{ const ss=window.speechSynthesis; if(!ss) return; ss.cancel(); const u=new SpeechSynthesisUtterance(text); u.rate=0.92; u.lang='en-US'; ss.speak(u); }catch(e){} }
+const hush=()=>{ try{ speechSynthesis.cancel(); }catch(e){} };
+
+/* ---------------- saved settings ---------------- */
+const KEY='gemquest.v1';
+const AVATARS=['🦁','🐶','🐱','🦊','🐼','🐸','🦄','🐯','🐵','🐧','🐢','🦖','🐰','🐨'];
+const COLORS=['#ef4444','#3b82f6','#22c55e','#f59e0b','#a855f7','#ec4899'];
+let S={players:[{name:'',avatar:'🦁',level:0},{name:'',avatar:'🐶',level:1}],len:1,voice:true,sound:true,game:null};
+try{ const s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s) S=Object.assign(S,s); }catch(e){}
+const save=()=>{ try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){} };
+let G=null;
+
+/* ---------------- screens ---------------- */
+function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id===id)); if(id!=='game') $('#modal').classList.remove('show'); }
+function refreshTitle(){ $('#contBtn').hidden=!(S.game&&!S.game.over); }
+$('#newBtn').onclick=()=>{ audio(); sfx('click'); renderSetup(); show('setup'); };
+$('#contBtn').onclick=()=>{ audio(); sfx('click'); G=S.game; startTurn(); show('game'); };
+
+/* ---------------- setup ---------------- */
+function renderSetup(){
+  const box=$('#plist'); box.innerHTML='';
+  S.players.forEach((p,i)=>{
+    const row=document.createElement('div'); row.className='prow'; row.style.setProperty('--pc',COLORS[i]);
+    row.innerHTML=`<button class="av" aria-label="Change animal">${p.avatar}</button><input maxlength="12" placeholder="Player ${i+1} name" value="${(p.name||'').replace(/"/g,'&quot;')}"><button class="del" aria-label="Remove player" ${S.players.length<2?'disabled style="visibility:hidden"':''}>✕</button>
+      <div class="levels">${LEVELS.map((L,k)=>`<button data-lv="${k}" class="${p.level===k?'on':''}">${L.icon} ${L.name}<small>${L.ages}</small></button>`).join('')}</div>`;
+    row.querySelector('.av').onclick=()=>{ const used=S.players.map(x=>x.avatar); let k=AVATARS.indexOf(p.avatar); do{ k=(k+1)%AVATARS.length; }while(used.includes(AVATARS[k])&&AVATARS[k]!==p.avatar); p.avatar=AVATARS[k]; sfx('click'); renderSetup(); };
+    row.querySelector('input').oninput=e=>{ p.name=e.target.value; save(); };
+    row.querySelector('.del').onclick=()=>{ S.players.splice(i,1); save(); renderSetup(); };
+    row.querySelectorAll('.levels button').forEach(b=>b.onclick=()=>{ p.level=+b.dataset.lv; sfx('click'); save(); renderSetup(); });
+    box.appendChild(row);
+  });
+  $('#addBtn').style.display=S.players.length>=6?'none':'';
+  document.querySelectorAll('#lenSeg button').forEach(b=>b.classList.toggle('on',+b.dataset.len===S.len));
+  save();
+}
+$('#addBtn').onclick=()=>{ if(S.players.length>=6) return; const used=S.players.map(x=>x.avatar); S.players.push({name:'',avatar:AVATARS.find(a=>!used.includes(a)),level:0}); sfx('click'); renderSetup(); };
+document.querySelectorAll('#lenSeg button').forEach(b=>b.onclick=()=>{ S.len=+b.dataset.len; sfx('click'); renderSetup(); });
+$('#backBtn').onclick=()=>{ refreshTitle(); show('title'); };
+$('#startBtn').onclick=()=>{ audio(); newGame(); };
+
+/* ---------------- the board ---------------- */
+const LENGTHS=[28,40,52];
+function buildSpaces(n){
+  const sp=[];
+  for(let i=0;i<n;i++){
+    let type='cat', cat=CAT_KEYS[(i*3)%5];
+    if(i===0) type='start'; else if(i===n-1) type='castle';
+    else if(i%5===0) type='gem';
+    else if(i%9===4) type='lucky';
+    else if(i%11===7&&i<n-5) type='whoosh';
+    else if(i%13===10) type='chest';
+    sp.push({type,cat});
+  }
+  return sp;
+}
+function layout(n){
+  const rows=n<=30?4:5, per=Math.ceil(n/rows), pts=[];
+  const x0=80, x1=920, y0=560, y1=70;
+  for(let i=0;i<n;i++){
+    const r=Math.floor(i/per), c=i%per, inRow=Math.min(per,n-r*per);
+    const span=(x1-x0)*(inRow-1)/(per-1||1);
+    let x=x0+(per>1?c*(x1-x0)/(per-1):0); if(r%2) x=x1-(per>1?c*(x1-x0)/(per-1):0);
+    const y=y0-r*(y0-y1)/(rows-1);
+    pts.push({x,y:y+Math.sin(c*0.9+r)*10});
+    void span;
+  }
+  return {pts,rows,per,r:Math.min(30,(x1-x0)/(per-1)*0.36)};
+}
+const SPACE_LOOK={
+  gem:{icon:'💎',color:'#06b6d4',label:'Gem'},lucky:{icon:'🍀',color:'#65a30d',label:'Lucky'},whoosh:{icon:'🌀',color:'#0ea5e9',label:'Whoosh'},
+  chest:{icon:'🎁',color:'#b45309',label:'Treasure chest'},start:{icon:'🚩',color:'#475569',label:'Start'},castle:{icon:'🏰',color:'#7c3aed',label:'Castle'},
+};
+const look=s=>s.type==='cat'?{icon:CATS[s.cat].icon,color:CATS[s.cat].color}:SPACE_LOOK[s.type];
+function drawBoard(){
+  const svg=$('#board'), L=G.L, P=L.pts;
+  let h=`<defs><linearGradient id="gr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7dd3a8"/><stop offset="1" stop-color="#3fae6b"/></linearGradient>
+    <radialGradient id="shine" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
+    <rect x="0" y="0" width="1000" height="620" rx="34" fill="url(#gr)"/>
+    <path d="M0 330 C 200 290, 300 380, 520 330 S 860 300, 1000 340 L1000 352 C 860 316, 700 350, 520 346 S 200 306, 0 344 Z" fill="#60a5fa" opacity=".55"/>`;
+  // scenery between rows
+  const deco=['🌳','🌲','🌷','⛰️','🍄','🌻','🪨','🌴','🦋','🐞'];
+  for(let r=0;r<L.rows-1;r++){ const yA=560-r*(490/(L.rows-1)), yB=560-(r+1)*(490/(L.rows-1)), ym=(yA+yB)/2; for(let k=0;k<5;k++){ const x=190+k*155+((r*37+k*53)%40); h+=`<text x="${x}" y="${ym+10}" font-size="26" text-anchor="middle" opacity=".85">${deco[(r*5+k)%deco.length]}</text>`; } }
+  // the trail
+  h+=`<path d="M ${P.map(p=>p.x+' '+p.y).join(' L ')}" fill="none" stroke="#f3dfb0" stroke-width="${L.r*1.3}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  h+=`<path d="M ${P.map(p=>p.x+' '+p.y).join(' L ')}" fill="none" stroke="#d9be86" stroke-width="3" stroke-dasharray="2 14" stroke-linecap="round"/>`;
+  G.spaces.forEach((s,i)=>{ const p=P[i], lk=look(s), big=s.type==='castle'||s.type==='start', r=big?L.r*1.25:L.r;
+    h+=`<g><circle cx="${p.x}" cy="${p.y+4}" r="${r}" fill="rgba(0,0,0,.25)"/><circle cx="${p.x}" cy="${p.y}" r="${r}" fill="${lk.color}" stroke="#fff" stroke-width="4"/><circle cx="${p.x}" cy="${p.y}" r="${r}" fill="url(#shine)"/>
+      <text x="${p.x}" y="${p.y+r*0.36}" font-size="${r*1.05}" text-anchor="middle">${lk.icon}</text></g>`; });
+  h+=`<g id="tokens"></g>`;
+  svg.innerHTML=h;
+  const tg=svg.querySelector('#tokens');
+  G.players.forEach((pl,i)=>{ const g=document.createElementNS('http://www.w3.org/2000/svg','g'); g.setAttribute('class','tok'); g.dataset.i=i; g.style.transition='transform .22s ease-out';
+    g.innerHTML=`<circle r="${L.r*0.72}" fill="${pl.color}" stroke="#fff" stroke-width="4"/><text y="${L.r*0.27}" font-size="${L.r*0.8}" text-anchor="middle">${pl.avatar}</text>`; tg.appendChild(g); });
+  placeTokens();
+}
+function tokenXY(i){
+  const pl=G.players[i], p=G.L.pts[pl.pos], same=G.players.map((q,k)=>k).filter(k=>G.players[k].pos===pl.pos), idx=same.indexOf(i), n=same.length;
+  if(n===1) return {x:p.x,y:p.y-G.L.r*0.9};
+  const a=-Math.PI/2+(idx-(n-1)/2)*0.75; return {x:p.x+Math.cos(a)*G.L.r*0.95,y:p.y+Math.sin(a)*G.L.r*0.95-G.L.r*0.4};
+}
+function placeTokens(){
+  document.querySelectorAll('#tokens .tok').forEach(g=>{ const i=+g.dataset.i, {x,y}=tokenXY(i); g.style.transform=`translate(${x}px,${y}px) scale(${i===G.turn?1.15:1})`; });
+  const cur=document.querySelector(`#tokens .tok[data-i="${G.turn}"]`); if(cur) cur.parentNode.appendChild(cur);
+}
+
+/* ---------------- game flow ---------------- */
+function newGame(){
+  const ps=S.players.map((p,i)=>({name:(p.name||'').trim()||('Player '+(i+1)),avatar:p.avatar,level:p.level,color:COLORS[i],pos:0,coins:0,gems:0,done:false,right:0,asked:0}));
+  const n=LENGTHS[S.len]; G={players:ps,turn:0,round:1,spaces:buildSpaces(n),n,finisher:null,over:false,used:{}};
+  S.game=G; save(); show('game'); startTurn();
+  say(`Let's find treasure! ${ps[0].name} goes first.`);
+}
+const score=p=>p.coins+p.gems*5;
+function renderScores(){
+  const box=$('#scores'); box.innerHTML='';
+  G.players.forEach((p,i)=>{ const d=document.createElement('div'); d.className='sc'+(i===G.turn&&!G.over?' now':''); d.style.setProperty('--pc',p.color); d.id='sc'+i;
+    d.innerHTML=`<div class="av">${p.avatar}</div><div><div class="nm">${esc(p.name)}${p.done?' 🏰':''}</div><div class="lv">${LEVELS[p.level].icon} ${LEVELS[p.level].name}</div></div><div class="tr">🪙 ${p.coins} &nbsp;💎 ${p.gems}<div class="tot">${score(p)} pts</div></div>`;
+    box.appendChild(d); });
+}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function setDie(n){ const on={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]}[n]||[]; $('#die').innerHTML=Array.from({length:9},(_,k)=>`<i style="visibility:${on.includes(k)?'visible':'hidden'}"></i>`).join(''); }
+let busy=false;
+function startTurn(){
+  if(!G) return;
+  if(!G.L){ G.L=layout(G.n); }
+  drawBoard(); renderScores(); busy=false;
+  const p=G.players[G.turn];
+  $('#turnCard').style.setProperty('--pc',p.color);
+  $('#turnName').textContent=`${p.avatar} ${p.name}'s turn`;
+  $('#turnLevel').textContent=`${LEVELS[p.level].icon} ${LEVELS[p.level].name} level · Round ${G.round}`;
+  $('#turnMsg').textContent=G.finisher!==null?'Last round! Grab more treasure!':'Tap Roll!';
+  $('#rollBtn').disabled=false; setDie(0);
+  S.game=G; save();
+}
+$('#rollBtn').onclick=()=>{ audio(); roll(); };
+async function roll(force){
+  if(busy||!G||G.over) return; busy=true; $('#rollBtn').disabled=true; hush();
+  const p=G.players[G.turn], n=force||rint(1,6);
+  sfx('roll'); $('#die').classList.remove('roll'); void $('#die').offsetWidth; $('#die').classList.add('roll');
+  for(let k=0;k<6&&!FAST();k++){ setDie(rint(1,6)); await wait(70); }
+  setDie(n); $('#turnMsg').textContent=`You rolled ${n}!`; say(`${n}!`);
+  await wait(450);
+  await moveBy(p,n);
+  await landOn(p);
+}
+async function moveBy(p,n){
+  for(let k=0;k<n&&p.pos<G.n-1;k++){ p.pos++; placeTokens(); sfx('hop'); await wait(260); }
+}
+async function landOn(p){
+  const s=G.spaces[p.pos], lv=LEVELS[p.level].key;
+  if(s.type==='castle') return reachCastle(p);
+  if(s.type==='cat') return ask(p,question(lv,s.cat),{coins:3});
+  if(s.type==='gem') return ask(p,question(lv,pick(CAT_KEYS)),{gems:1});
+  if(s.type==='lucky'){ give(p,{coins:2}); return message('🍀 Lucky clover!',`${p.name} finds 2 coins!`,'#65a30d'); }
+  if(s.type==='chest'){ const r=Math.random()<0.4?{gems:1}:{coins:rint(3,5)}; give(p,r); return message('🎁 Treasure chest!',r.gems?`${p.name} finds a GEM!`:`${p.name} finds ${r.coins} coins!`,'#b45309'); }
+  if(s.type==='whoosh'){ sfx('whoosh'); const to=Math.min(G.n-2,p.pos+3); while(p.pos<to){ p.pos++; placeTokens(); await wait(120); } return message('🌀 Whoosh!',`${p.name} zooms ahead 3 spaces!`,'#0ea5e9'); }
+  endTurn();
+}
+function give(p,r){
+  if(r.coins){ p.coins+=r.coins; flyTo(p,'🪙',Math.min(r.coins,5)); sfx('coin'); }
+  if(r.gems){ p.gems+=r.gems; flyTo(p,'💎',r.gems); setTimeout(()=>sfx('gem'),120); }
+  renderScores();
+}
+function flyTo(p,emo,count){
+  if(FAST()) return; const idx=G.players.indexOf(p), tgt=document.getElementById('sc'+idx); if(!tgt) return;
+  const tr=tgt.getBoundingClientRect(), from=($('#modal').classList.contains('show')?$('#qmsg'):$('#turnCard')).getBoundingClientRect();
+  for(let k=0;k<count;k++){ const e=document.createElement('div'); e.className='fly'; e.textContent=emo; e.style.left=(from.left+from.width/2-17+(k-count/2)*14)+'px'; e.style.top=(from.top+from.height/2-17)+'px'; document.body.appendChild(e);
+    setTimeout(()=>{ e.style.transform=`translate(${tr.left+tr.width-60-parseFloat(e.style.left)}px,${tr.top+tr.height/2-17-parseFloat(e.style.top)}px) scale(.6)`; e.style.opacity='0.2'; },30+k*90);
+    setTimeout(()=>e.remove(),1000+k*90); }
+}
+function confetti(n=60){ if(FAST()) return; const cs=['#f7c948','#22d3ee','#ef4444','#22c55e','#a855f7','#fff']; for(let i=0;i<n;i++){ const c=document.createElement('div'); c.className='confetti'; c.style.left=Math.random()*100+'vw'; c.style.background=pick(cs); c.style.animationDuration=(1.6+Math.random()*1.6)+'s'; c.style.animationDelay=Math.random()*0.4+'s'; document.body.appendChild(c); setTimeout(()=>c.remove(),3600); } }
+
+/* ---------------- question card ---------------- */
+let Q=null;
+function picHTML(pic){
+  if(!pic) return '';
+  if(typeof pic==='string') return esc(pic);
+  if(pic.rows) return esc(pic.rows);
+  if(pic.color) return `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="${pic.color}" stroke="#333" stroke-width="3"/></svg>`;
+  if(pic.shape){ const c=pic.color, st='stroke="#333" stroke-width="3"'; const sh={
+    CIRCLE:`<circle cx="50" cy="50" r="42" fill="${c}" ${st}/>`, SQUARE:`<rect x="12" y="12" width="76" height="76" fill="${c}" ${st}/>`, RECTANGLE:`<rect x="4" y="26" width="92" height="48" fill="${c}" ${st}/>`,
+    TRIANGLE:`<polygon points="50,8 94,88 6,88" fill="${c}" ${st}/>`, STAR:`<polygon points="50,5 61,38 96,38 68,58 79,92 50,72 21,92 32,58 4,38 39,38" fill="${c}" ${st}/>`,
+    HEART:`<path d="M50 88 C10 60 4 34 22 20 C36 10 48 18 50 30 C52 18 64 10 78 20 C96 34 90 60 50 88Z" fill="${c}" ${st}/>`}[pic.shape];
+    return `<svg viewBox="0 0 100 100">${sh}</svg>`; }
+  return '';
+}
+function ask(p,q,reward){
+  return new Promise(res=>{
+    Q={p,q,reward,res,done:false,tries:0};
+    const lv=LEVELS[p.level], c=CATS[q.cat], gem=!!reward.gems;
+    $('#qhead').style.background=gem?'linear-gradient(90deg,#0891b2,#06b6d4)':c.color;
+    $('#qcat').textContent=(gem?'💎 GEM QUESTION · ':'')+c.icon+' '+c.name;
+    $('#qwho').textContent=`${p.avatar} ${p.name} · ${lv.name}`;
+    $('#qtext').textContent=q.q;
+    const ph=picHTML(q.pic); $('#qpic').innerHTML=ph; $('#qpic').style.display=ph?'':'none'; $('#qpic').classList.toggle('small',!!(q.pic&&q.pic.rows));
+    const box=$('#choices'); box.className=p.level===0?'little':''; box.innerHTML='';
+    q.choices.forEach((ch,i)=>{ const b=document.createElement('button'); b.textContent=ch; b.onclick=()=>answer(i); box.appendChild(b); });
+    $('#qmsg').innerHTML=gem?'Get it right to win a 💎 gem!':'Get it right to win 3 🪙 coins!';
+    $('#qnext').classList.remove('show');
+    $('#modal').classList.add('show');
+    readQ();
+  });
+}
+function readQ(){ if(!Q) return; const q=Q.q; const txt=(q.say||q.q).replace(/___/g,'blank').replace(/×/g,' times ').replace(/÷/g,' divided by ').replace(/−/g,' minus ').replace(/²/g,' squared ');
+  say(Q.p.level===0?`${txt} ${q.choices.slice(0,-1).join(', ')}, or ${q.choices[q.choices.length-1]}?`:txt); }
+$('#qsay').onclick=()=>{ audio(); const was=S.voice; S.voice=true; readQ(); S.voice=was; };
+function answer(i){
+  if(!Q||Q.done) return; audio();
+  const btns=[...document.querySelectorAll('#choices button')], q=Q.q, p=Q.p;
+  Q.done=true; p.asked++;
+  btns.forEach((b,k)=>{ if(k===q.ans) b.classList.add('right'); else if(k===i) b.classList.add('wrong'); else b.classList.add('dim'); });
+  if(i===q.ans){
+    p.right++; sfx('right'); confetti(Q.reward.gems?90:40);
+    const m=pick(['Great job!','You got it!','Awesome!','Super smart!','Brilliant!']);
+    $('#qmsg').innerHTML=`${m} ${Q.reward.gems?'+1 💎':'+3 🪙'}`; say(m); give(p,Q.reward);
+  } else {
+    sfx('wrong');
+    const right=q.choices[q.ans];
+    if(p.level===0){ $('#qmsg').innerHTML=`Good try! The answer is <b>${esc(right)}</b>.<span class="sub">+1 🪙 for trying!</span>`; give(p,{coins:1}); say(`Good try! The answer is ${right}. Here is a coin for trying!`); }
+    else { $('#qmsg').innerHTML=`Not quite. The answer is <b>${esc(right)}</b>.`; say(`Not quite. The answer is ${right}.`); }
+  }
+  $('#qnext').classList.add('show');
+}
+$('#qnext').onclick=()=>{ audio(); sfx('click'); closeQ(); };
+function closeQ(){ if(!Q) return; const r=Q.res; Q=null; hush(); $('#modal').classList.remove('show'); r(); endTurn(); }
+function message(title,text,color){
+  return new Promise(res=>{
+    Q={p:G.players[G.turn],q:null,reward:{},res,done:true};
+    $('#qhead').style.background=color; $('#qcat').textContent=title; $('#qwho').textContent='';
+    $('#qtext').textContent=text; $('#qpic').innerHTML=''; $('#qpic').style.display='none'; $('#choices').innerHTML=''; $('#qmsg').innerHTML='';
+    $('#qnext').classList.add('show'); $('#modal').classList.add('show'); say(text);
+  });
+}
+function reachCastle(p){
+  p.done=true;
+  let r, t;
+  if(G.finisher===null){ G.finisher=G.turn; r={gems:2,coins:5}; t=`${p.name} reached the castle FIRST! +2 💎 and 5 🪙! Everyone else gets one last turn.`; sfx('fanfare'); confetti(120); }
+  else { r={gems:1}; t=`${p.name} made it to the castle! +1 💎`; sfx('right'); confetti(50); }
+  give(p,r); renderScores();
+  return message('🏰 The Castle!',t,'#7c3aed');
+}
+function endTurn(){
+  if(!G||G.over) return;
+  const n=G.players.length;
+  // after someone reaches the castle, finish the round so everyone gets the same number of turns
+  let next=G.turn, wrapped=false;
+  for(let k=0;k<n;k++){
+    next=(next+1)%n; if(next===0) wrapped=true;
+    if(G.finisher!==null&&wrapped) return finish();
+    if(!G.players[next].done) break;
+    if(k===n-1) return finish();
+  }
+  if(G.players.every(p=>p.done)) return finish();
+  if(wrapped) G.round++;
+  G.turn=next; startTurn();
+}
+function finish(){
+  G.over=true; S.game=null; save(); hush();
+  const ranked=G.players.slice().sort((a,b)=>score(b)-score(a)||b.gems-a.gems);
+  const top=score(ranked[0]), winners=ranked.filter(p=>score(p)===top);
+  $('#endTitle').textContent=winners.length>1?'It\'s a tie!':`${ranked[0].name} wins!`;
+  const medal=['🥇','🥈','🥉','🏅','🏅','🏅'];
+  let place=0; $('#podium').innerHTML=ranked.map((p,i)=>{ if(i&&score(p)<score(ranked[i-1])) place=i; return `<div class="pod ${place===0?'first':''}" style="--pc:${p.color}"><div class="place">${medal[place]}</div><div class="av">${p.avatar}</div><div class="nm">${esc(p.name)}</div><div>🪙 ${p.coins} · 💎 ${p.gems}</div><div class="pts">${score(p)} pts</div><div style="font-size:12px;color:var(--muted);font-weight:700">${p.right} of ${p.asked} right</div></div>`; }).join('');
+  show('end'); sfx('fanfare'); confetti(150);
+  say(winners.length>1?`It's a tie! Great playing, everyone!`:`${ranked[0].name} wins with ${top} points! Great playing, everyone!`);
+}
+$('#againBtn').onclick=()=>{ audio(); newGame(); };
+$('#homeBtn').onclick=()=>{ renderSetup(); show('setup'); };
+$('#menuBtn').onclick=()=>{ hush(); S.game=G; save(); refreshTitle(); show('title'); };
+function syncToggles(){ $('#voiceBtn').classList.toggle('off',!S.voice); $('#soundBtn').classList.toggle('off',!S.sound); }
+$('#voiceBtn').onclick=()=>{ S.voice=!S.voice; if(!S.voice) hush(); syncToggles(); save(); };
+$('#soundBtn').onclick=()=>{ S.sound=!S.sound; syncToggles(); save(); audio(); sfx('click'); };
+syncToggles(); refreshTitle();
+window.addEventListener('resize',()=>{ if(G&&$('#game').classList.contains('active')) placeTokens(); });
+
+// test hook for automated play-testing (harmless in normal play)
+window.__GQ={GEN,LEVELS,CATS,question,get G(){return G;},newGame,roll,answer,closeQ,get Q(){return Q;},S,save,renderSetup,show,score,buildSpaces,layout};
+})();
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+</script>
+</body>
+</html>
